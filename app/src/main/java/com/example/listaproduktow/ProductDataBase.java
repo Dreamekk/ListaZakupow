@@ -5,17 +5,26 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @Database(entities = Product.class,exportSchema = false,version = 1)
 public abstract class ProductDataBase extends RoomDatabase {
-    private static final String Dbname = "Product DB";
+    private static final String Dbname = "ProductDB";
     public abstract ProductDao productDao();
-    private static ProductDataBase instance;
-    public static ProductDataBase getInstance(Context context){
+    private static volatile ProductDataBase instance;
+    static final ExecutorService dataBaseWritterExecutor = Executors.newFixedThreadPool(4);
+    public static ProductDataBase getDatabase(final Context context){
         if(instance==null){
-            instance = Room.databaseBuilder(context.getApplicationContext(),ProductDataBase.class,Dbname)
-                    .allowMainThreadQueries()
-                    .fallbackToDestructiveMigration()
-                    .build();
+            synchronized (ProductDataBase.class) {
+                if (instance == null) {
+                    instance = Room.databaseBuilder(context.getApplicationContext(), ProductDataBase.class, Dbname)
+                            //     .allowMainThreadQueries()
+                            //    .fallbackToDestructiveMigration()
+                            .build();
+                }
+            }
         }
         return instance;
     }
